@@ -308,6 +308,10 @@
   margin-top: 0 !important;
 }
 
+.cat-slide.is-active.is-active .store-card{
+  border-color: #396943;
+}
+
 
 @media (hover: hover) {
 
