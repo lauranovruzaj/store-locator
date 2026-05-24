@@ -226,6 +226,14 @@
   gap: 10px;
 }
 
+.category .slide-intro .h3 .sl-tip-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
 .category .slide-txt,
 .story-txt {
   display: flex;

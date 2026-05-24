@@ -2,7 +2,13 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-$suggerimenti = (string) SL_Settings::get( 'suggerimenti' );
+$suggerimenti       = (string) SL_Settings::get( 'suggerimenti' );
+$suggerimenti_title = (string) SL_Settings::get( 'suggerimenti_title' );
+$suggerimenti_icon  = (string) SL_Settings::get( 'suggerimenti_icon' );
+
+$sl_icon_html = $suggerimenti_icon
+	? '<img class="sl-tip-icon" src="' . esc_url( $suggerimenti_icon ) . '" alt="" aria-hidden="true">'
+	: '<i class="biokyma xl leaf" aria-hidden="true"></i>';
 ?>
 <section id="store" class="store-locator">
 	<form action="<?php echo esc_url( home_url( '/' ) ); ?>" method="GET" role="search" class="store-form box-full" id="sl-form">
@@ -43,14 +49,14 @@ $suggerimenti = (string) SL_Settings::get( 'suggerimenti' );
 		aria-label="<?php esc_attr_e( 'Lista negozi presenti nell\'area interessata', 'store-locator' ); ?>">
 
 		<div class="slide-intro d-mid-none my">
-			<p class="h3"><i class="biokyma xl leaf" aria-hidden="true"></i><?php esc_html_e( 'Suggerimenti', 'store-locator' ); ?></p>
+			<p class="h3"><?php echo $sl_icon_html; // safe: built above with esc_url ?><?php echo esc_html( $suggerimenti_title ); ?></p>
 			<p class="leaf"><?php echo esc_html( $suggerimenti ); ?></p>
 		</div>
 
 		<div class="slide-box">
 			<div class="slide-wrap" id="sl-slides">
 				<article class="slide cat-slide slide-intro" role="group" aria-roledescription="slide">
-					<p class="h3"><i class="biokyma xl leaf" aria-hidden="true"></i><?php esc_html_e( 'Suggerimenti', 'store-locator' ); ?></p>
+					<p class="h3"><?php echo $sl_icon_html; // safe: built above with esc_url ?><?php echo esc_html( $suggerimenti_title ); ?></p>
 					<p class="leaf"><?php echo esc_html( $suggerimenti ); ?></p>
 				</article>
 				<article class="slide cat-slide sl-loading" role="group" aria-roledescription="slide">
