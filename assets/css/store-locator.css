@@ -69,7 +69,8 @@
 	display: flex;
 	justify-content: center;
 	gap: 6px;
-	margin: 12px 0 0;
+	margin: 50px 0 0;
+	position: relative;
 }
 .sl-dot {
 	width: 8px;
@@ -88,6 +89,38 @@
 	padding: 16px;
 	color: var(--sl-muted);
 	text-align: center;
+}
+
+/* ---------- Plugin slider (mirrors theme `.slider` geometry, scoped) ---------- */
+/* Theme JS hooks on `.slider`; we use `.sl-slider` so it won't double-bind.
+   These rules replicate the layout that `.slider .slide-wrap` / `.slider .slide`
+   used to provide (display:flex + translateX transitions + 100%-wide slides). */
+.sl-slider .slide-box,
+.sl-slider .slide-wrap {
+	position: relative;
+	font-size: 0;
+}
+.sl-slider .slide-wrap {
+	display: flex;
+	align-items: stretch;
+	flex-wrap: nowrap;
+	transition: transform 0.6s ease-out;
+	height: auto;
+	flex-shrink: 0;
+	will-change: transform;
+}
+.sl-slider .slide {
+	position: relative;
+	display: flex;
+	font-size: initial;
+	justify-content: center;
+	align-items: stretch;
+	flex-shrink: 0;
+	width: 100%;
+}
+.sl-slider .slide-btns button[disabled] {
+	opacity: .35;
+	cursor: not-allowed;
 }
 
 /* ---------- Mobile ---------- */

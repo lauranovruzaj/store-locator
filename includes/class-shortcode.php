@@ -21,17 +21,9 @@ class SL_Shortcode {
 		);
 
 		wp_register_script(
-			'embla-carousel',
-			'https://unpkg.com/embla-carousel/embla-carousel.umd.js',
-			[],
-			null,
-			true
-		);
-
-		wp_register_script(
 			'store-locator',
 			SL_PLUGIN_URL . 'assets/js/store-locator.js',
-			[ 'embla-carousel' ],
+			[],
 			SL_VERSION,
 			true
 		);
@@ -56,7 +48,6 @@ class SL_Shortcode {
 
 	public static function render( $atts = [], $content = '' ): string {
 		wp_enqueue_style( 'store-locator' );
-		wp_enqueue_script( 'embla-carousel' );
 		wp_enqueue_script( 'store-locator' );
 		if ( wp_script_is( 'google-maps', 'registered' ) ) {
 			wp_enqueue_script( 'google-maps' );

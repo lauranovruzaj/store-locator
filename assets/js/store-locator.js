@@ -1,4 +1,4 @@
-/* global EmblaCarousel, SL_DATA */
+/* global SL_DATA */
 (function () {
 	'use strict';
 
@@ -20,7 +20,7 @@
 		searchMarker: null,
 		radius: 25,
 		activeId: null,
-		embla: null,
+		slider: null,
 		visible: [],        // currently rendered stores (in card order)
 	};
 
@@ -100,7 +100,7 @@
 
 		state.visible = stores;
 		toggleEmpty(stores.length === 0);
-		setupEmbla();
+		if (state.slider) state.slider.refresh({ resetIndex: true });
 	}
 
 	function toggleEmpty(empty) {
@@ -114,42 +114,102 @@
 		}
 	}
 
-	// ---------- Embla ----------
-	function setupEmbla() {
-		const wrap = $('#sl-slides');
-		if (!wrap) return;
-		wrap.classList.add('embla__container');
-		const root = wrap.parentElement; // .slide-box
-		root.classList.add('embla');
+	// ---------- Vanilla slider (scoped to .sl-slider) ----------
+	// Mirrors the theme slider's translateX behavior but with a plugin-only
+	// root class so the theme's slider('.slider') never binds to it.
+	function initSlider() {
+		const root = $('.sl-slider');
+		if (!root) return null;
 
-		if (state.embla) {
-			state.embla.reInit();
-		} else {
-			state.embla = EmblaCarousel(root, {
-				align: 'start',
-				containScroll: 'trimSnaps',
-				slidesToScroll: 1,
-				dragFree: false,
-			});
-			$('#sl-prev')?.addEventListener('click', () => state.embla.scrollPrev());
-			$('#sl-next')?.addEventListener('click', () => state.embla.scrollNext());
-			state.embla.on('select', renderDots);
-			state.embla.on('reInit', renderDots);
+		const prev    = root.querySelector('.aft');
+		const next    = root.querySelector('.fore');
+		const box     = root.querySelector('.slide-box');
+		const trak    = root.querySelector('.slide-wrap');
+		const dotsBox = root.querySelector('.dots');
+		if (!box || !trak) return null;
+
+		const sState = { act: 0, max: 0 };
+		let slides = [];
+		let touchStartX = null;
+
+		function visibility() {
+			slides = Array.from(trak.querySelectorAll(':scope > .slide'));
+			const total = slides.length;
+			if (total === 0) { sState.max = 0; return; }
+			const firstVisible = slides.find(s => s.offsetWidth > 0) || slides[0];
+			const slideWidth = firstVisible.offsetWidth || 1;
+			const visibleCount = slides.filter(s => s.offsetWidth > 0).length;
+			const perView = Math.max(Math.round(box.offsetWidth / slideWidth), 1);
+			sState.max = Math.max(visibleCount - perView, 0);
 		}
-		renderDots();
-	}
 
-	function renderDots() {
-		const dots = $('#sl-dots');
-		if (!dots || !state.embla) return;
-		const snaps = state.embla.scrollSnapList();
-		const selected = state.embla.selectedScrollSnap();
-		dots.innerHTML = snaps.map((_, i) =>
-			`<button type="button" class="sl-dot${i === selected ? ' is-active' : ''}" data-i="${i}" aria-label="slide ${i + 1}"></button>`
-		).join('');
-		$$('.sl-dot', dots).forEach(btn => {
-			btn.addEventListener('click', () => state.embla.scrollTo(Number(btn.dataset.i)));
+		function buildDots() {
+			if (!dotsBox) return;
+			dotsBox.innerHTML = '';
+			const dotCount = sState.max + 1;
+			if (dotCount <= 1) return;
+			for (let i = 0; i < dotCount; i++) {
+				const dot = document.createElement('span');
+				if (i === sState.act) dot.classList.add('dot-active');
+				dot.addEventListener('click', () => goTo(i));
+				dotsBox.appendChild(dot);
+			}
+		}
+
+		function updateUI() {
+			trak.style.transform = `translateX(-${100 * sState.act}%)`;
+			if (prev) prev.disabled = sState.act <= 0;
+			if (next) next.disabled = sState.act >= sState.max;
+			if (dotsBox) {
+				Array.from(dotsBox.children).forEach((d, i) => {
+					d.classList.toggle('dot-active', i === sState.act);
+				});
+			}
+		}
+
+		function change(dir) {
+			const target = Math.max(0, Math.min(sState.max, sState.act + dir));
+			if (target === sState.act) return;
+			sState.act = target;
+			updateUI();
+		}
+
+		function goTo(i) {
+			sState.act = Math.max(0, Math.min(sState.max, i));
+			updateUI();
+		}
+
+		function refresh(opts = {}) {
+			if (opts.resetIndex) sState.act = 0;
+			visibility();
+			if (sState.act > sState.max) sState.act = sState.max;
+			buildDots();
+			updateUI();
+		}
+
+		if (prev) prev.addEventListener('click', () => change(-1));
+		if (next) next.addEventListener('click', () => change(1));
+
+		// Touch swipe
+		box.addEventListener('touchstart', (e) => {
+			touchStartX = e.touches[0].clientX;
+		}, { passive: true });
+		box.addEventListener('touchend', (e) => {
+			if (touchStartX == null) return;
+			const dx = touchStartX - e.changedTouches[0].clientX;
+			if (Math.abs(dx) > 30) change(dx > 0 ? 1 : -1);
+			touchStartX = null;
 		});
+
+		// Keep dots/limits correct on resize.
+		let rt;
+		window.addEventListener('resize', () => {
+			clearTimeout(rt);
+			rt = setTimeout(() => refresh(), 120);
+		});
+
+		refresh();
+		return { refresh, goTo, prev: () => change(-1), next: () => change(1), getMax: () => sState.max };
 	}
 
 	// ---------- Map / Markers ----------
@@ -196,10 +256,10 @@
 			if (state.map.getZoom() < 11) state.map.setZoom(12);
 		}
 
-		// Scroll carousel to this card
+		// Scroll slider to this card (+1 to skip the intro slide).
 		const idx = state.visible.findIndex(s => s.id === id);
-		if (idx >= 0 && state.embla) {
-			state.embla.scrollTo(idx + 1); // +1 for the intro slide at index 0
+		if (idx >= 0 && state.slider) {
+			state.slider.goTo(idx + 1);
 		}
 
 		// Mark card active
@@ -303,6 +363,9 @@
 
 		state.stores = await storesPromise;
 		if (state.map) state.stores.forEach(addMarker);
+
+		// Initialize slider once; refresh() runs after each rebuild.
+		state.slider = initSlider();
 
 		applyFilter();
 
